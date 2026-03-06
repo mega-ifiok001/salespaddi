@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMail, FiCheckCircle, FiArrowRight, FiPlay, FiUsers, FiZap, FiBarChart, FiMenu, FiX } from 'react-icons/fi';
 import { supabase } from './lib/supabase';
 
-// ── Sub-Components ─────────────────────────────────────────────
-
+// ── Navbar ─────────────────────────────────────────────
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -21,13 +20,13 @@ const Navbar = () => {
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-8 text-sm text-gray-300">
           <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#who" className="hover:text-white transition-colors">Solutions</a>
+          <a href="#benefits" className="hover:text-white transition-colors">Benefits</a>
           <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full border border-white/10 transition-all text-sm">
             Join Waitlist
           </button>
         </div>
 
-        {/* Mobile hamburger */}
+        {/* Mobile menu toggle */}
         <button 
           className="md:hidden text-white p-2 -mr-2"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -48,7 +47,7 @@ const Navbar = () => {
           >
             <div className="px-4 py-6 flex flex-col gap-5 text-center text-lg">
               <a href="#features" onClick={() => setMobileOpen(false)} className="hover:text-brand transition-colors">Features</a>
-              <a href="#who" onClick={() => setMobileOpen(false)} className="hover:text-brand transition-colors">Solutions</a>
+              <a href="#benefits" onClick={() => setMobileOpen(false)} className="hover:text-brand transition-colors">Benefits</a>
               <button 
                 onClick={() => setMobileOpen(false)}
                 className="mt-3 px-6 py-3 bg-brand hover:bg-brand-light text-white rounded-xl font-medium transition-all"
@@ -63,6 +62,7 @@ const Navbar = () => {
   );
 };
 
+// ── Waitlist Form ─────────────────────────────────────────────
 const WaitlistForm = () => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle');
@@ -70,13 +70,11 @@ const WaitlistForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) return;
-
     setStatus("loading");
 
     try {
       const { error } = await supabase.from("waitlist").insert([{ email }]);
       if (error) throw error;
-
       setStatus("success");
       setEmail("");
     } catch (err) {
@@ -121,7 +119,7 @@ const WaitlistForm = () => {
             exit={{ opacity: 0, y: -8 }}
             className="text-brand-light mt-5 flex items-center justify-center gap-2 text-base sm:text-lg"
           >
-            <FiCheckCircle /> You're on the list! We'll be in touch.
+            <FiCheckCircle /> You're on the list! Get ready for exclusive perks.
           </motion.p>
         )}
 
@@ -141,6 +139,7 @@ const WaitlistForm = () => {
   );
 };
 
+// ── Feature Card ─────────────────────────────────────────────
 const FeatureCard = ({ icon: Icon, title, desc }) => (
   <motion.div
     whileHover={{ y: -6, scale: 1.02 }}
@@ -155,7 +154,6 @@ const FeatureCard = ({ icon: Icon, title, desc }) => (
 );
 
 // ── Main Component ─────────────────────────────────────────────
-
 export default function App() {
   return (
     <div className="min-h-screen bg-[#050505] text-gray-300 selection:bg-brand selection:text-white font-sans">
@@ -168,7 +166,7 @@ export default function App() {
       <Navbar />
 
       <main className="relative">
-        {/* Hero */}
+        {/* Hero Section */}
         <section className="pt-28 sm:pt-32 md:pt-40 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto text-center flex flex-col items-center">
             <motion.div
@@ -180,18 +178,18 @@ export default function App() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
               </span>
-              Now accepting early access requests
+              Early access: Limited spots available
             </motion.div>
 
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-4xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-white sm:text-start   mb-5 sm:mb-6 tracking-tight leading-tight"
+              className="text-4xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-5 sm:mb-6 tracking-tight leading-tight"
             >
               AI Powered Webinars, <br className="sm:hidden" />
               <span className="bg-clip-text  bg-gradient-to-r from-brand-light to-emerald-200">
-                Sales & Marketing Automation
+                Boost Sales & Automate Marketing
               </span>
             </motion.h1>
 
@@ -201,7 +199,8 @@ export default function App() {
               transition={{ delay: 0.3 }}
               className="max-w-xl text-base sm:text-lg md:text-xl text-gray-400 mb-8 sm:mb-10 px-2 sm:px-0"
             >
-              SalesPaddi helps creators, agencies and businesses run automated webinars, capture leads, and convert customers using AI.
+              Join our waitlist to get early access, insider tips, AI-driven webinar automation, 
+              personalized lead follow-ups, and exclusive tools to grow your sales faster.
             </motion.p>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
@@ -210,34 +209,34 @@ export default function App() {
           </div>
         </section>
 
-        {/* Features */}
+        {/* Features Section */}
         <section id="features" className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8">
             <FeatureCard icon={FiPlay} title="AI Webinar Automation" desc="Set up once — AI handles engagement & delivery 24/7." />
             <FeatureCard icon={FiZap} title="Smart Lead Capture" desc="Forms adapt to behavior — maximize conversions." />
-            <FeatureCard icon={FiUsers} title="Automated Follow-ups" desc="Personalized AI email & SMS sequences that close." />
-            <FeatureCard icon={FiBarChart} title="Real-Time Dashboard" desc="Track ROI, engagement & sales in one clean view." />
+            <FeatureCard icon={FiUsers} title="Automated Follow-ups" desc="AI-driven emails & SMS sequences to nurture leads & close deals." />
+            <FeatureCard icon={FiBarChart} title="Real-Time Dashboard" desc="Monitor sales, engagement & ROI instantly in one view." />
           </div>
         </section>
 
-        {/* Problem Section */}
-        <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white/[0.02] border-y border-white/5">
+        {/* Benefits Section */}
+        <section id="benefits" className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white/[0.02] border-y border-white/5">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-10 sm:mb-16">
-              The sales cycle is broken.<br className="sm:hidden" /> We're fixing it.
+              Why Join the Waitlist?
             </h2>
             <div className="grid md:grid-cols-2 gap-8 sm:gap-12 text-left">
               {[
-                { q: "Running Webinars", a: "Tedious setups and tech issues waste hours." },
-                { q: "Managing Leads", a: "Leads vanish in spreadsheets and broken CRMs." },
-                { q: "Following Up", a: "Manual follow-ups are slow — speed kills deals." },
-                { q: "Converting Viewers", a: "Passive viewers don’t buy. You need AI persuasion." }
+                { q: "Early Access", a: "Be the first to test AI-driven webinars and automation tools." },
+                { q: "Lifetime Early Pricing", a: "Secure special pricing only available to waitlisters." },
+                { q: "Exclusive Insights", a: "Get tips, tutorials, and insider strategies to boost sales." },
+                { q: "Personalized Support", a: "Receive direct guidance to help your campaigns succeed." }
               ].map((item, i) => (
                 <div key={i} className="flex gap-3 sm:gap-4">
                   <div className="text-brand-light font-bold text-lg sm:text-xl flex-shrink-0">0{i + 1}.</div>
                   <div>
                     <h4 className="text-white font-semibold mb-1.5 sm:mb-2 text-base sm:text-lg">{item.q}</h4>
-                    <p className="text-gray-500 text-sm sm:text-base">{item.a}</p>
+                    <p className="text-gray-400 text-sm sm:text-base">{item.a}</p>
                   </div>
                 </div>
               ))}
@@ -254,10 +253,10 @@ export default function App() {
             className="max-w-4xl mx-auto rounded-3xl sm:rounded-[3rem] bg-gradient-to-b from-brand/15 to-transparent border border-brand/20 p-8 sm:p-12 md:p-16 lg:p-20 text-center"
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-5 sm:mb-6">
-              Join the SalesPaddi Waitlist
+              Secure Your Spot on the Waitlist
             </h2>
             <p className="text-gray-400 mb-8 sm:mb-10 text-base sm:text-lg max-w-md mx-auto">
-              Early access + lifetime early adopter pricing + exclusive community.
+              Get early access, lifetime early adopter pricing, exclusive insights, and AI tools to grow faster.
             </p>
             <WaitlistForm />
           </motion.div>
