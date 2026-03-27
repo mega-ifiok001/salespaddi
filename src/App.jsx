@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMail, FiCheckCircle, FiArrowRight, FiPlay, FiUsers, FiZap, FiBarChart, FiMenu, FiX } from 'react-icons/fi';
 import { supabase } from './lib/supabase';
+import { 
+  Mail, 
+  ArrowRight, 
+  Loader2, 
+  CheckCircle2, 
+  Sparkles, 
+  AlertCircle 
+} from 'lucide-react';
 
 // ── Navbar ─────────────────────────────────────────────
 const Navbar = () => {
@@ -62,82 +70,198 @@ const Navbar = () => {
   );
 };
 
-// ── Waitlist Form ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+// ✨ Waitlist Form Component
+// ════════════════════════════════════════════════════════════════════════════
+
+
 const WaitlistForm = () => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle');
+  const [checkStatus, setCheckStatus] = useState('idle');
+  const [message, setMessage] = useState('');
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Core Logic (Unchanged, just beautifully wrapped)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const checkEmailExists = useCallback(async (emailToCheck) => {
+    if (!emailToCheck?.includes('@')) {
+      setCheckStatus('idle');
+      return;
+    }
+    setCheckStatus('checking');
+    try {
+      const { data, error } = await supabase
+        .from('waitlist')
+        .select('email')
+        .eq('email', emailToCheck)
+        .maybeSingle();
+
+      if (error) throw error;
+      setCheckStatus(data ? 'already_joined' : 'available');
+    } catch (err) {
+      console.error('Email check failed:', err);
+      setCheckStatus('idle');
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      checkEmailExists(email.trim());
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [email, checkEmailExists]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) return;
-    setStatus("loading");
+    if (!email.trim()) return;
+
+    setStatus('loading');
+    setMessage('');
 
     try {
-      const { error } = await supabase.from("waitlist").insert([{ email }]);
-      if (error) throw error;
-      setStatus("success");
-      setEmail("");
+      const { error } = await supabase
+        .from('waitlist')
+        .insert([{ email: email.trim() }]);
+
+      if (error) {
+        if (error.code === '23505') {
+          setStatus('already_joined');
+          setMessage("You're already on our exclusive list.");
+          return;
+        }
+        throw error;
+      }
+
+      setStatus('success');
+      setMessage("Welcome aboard. Keep an eye on your inbox.");
+      setEmail('');
+      setCheckStatus('idle');
     } catch (err) {
-      console.error(err);
-      setStatus("error");
+      console.error('Submission failed:', err);
+      setStatus('error');
+      setMessage('Something went wrong. Please try again.');
     }
   };
 
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+    if (status !== 'idle') setStatus('idle');
+  };
+
+  const isButtonDisabled = status === 'loading' || checkStatus === 'already_joined';
+  const isValidEmail = email.includes('@');
+  const showFeedback = email.trim().length > 0 && status === 'idle';
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────────────────
+
   return (
-    <div className="w-full max-w-lg mx-auto">
-      <form onSubmit={handleSubmit} className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-brand to-brand-light rounded-2xl blur opacity-30 group-focus-within:opacity-60 transition duration-500" />
-        <div className="relative flex flex-col sm:flex-row gap-3 p-2 bg-[#0a0a0a] border border-white/10 rounded-2xl">
-          <div className="flex-1 flex items-center px-4 py-3 sm:py-2">
-            <FiMail className="text-gray-500 mr-3 flex-shrink-0" />
+    <div className="w-full max-w-md mx-auto">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        
+        {/* Input & Button Container */}
+        <div className="relative flex flex-col sm:flex-row gap-3">
+          
+          <div className="relative flex-1 group">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-gray-900 transition-colors duration-200" />
+            </div>
+            
             <input
               type="email"
-              placeholder="Enter your work email"
-              className="bg-transparent border-none outline-none text-white placeholder:text-gray-600 w-full text-base"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
+              placeholder="Enter your work email"
               required
+              aria-label="Email address"
+              className="block w-full pl-11 pr-4 py-3 bg-transparent border border-white rounded-xl text-white-900 placeholder-white shadow-sm transition-all duration-200 outline-none hover:border-white focus:border-white focus:ring-1 focus:ring-white-900"
             />
           </div>
+
           <button
             type="submit"
-            disabled={status === "loading"}
-            className="bg-brand hover:bg-brand-light text-white px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-60 text-base whitespace-nowrap"
+            disabled={isButtonDisabled}
+            aria-busy={status === 'loading'}
+            className="inline-flex items-center justify-center px-6 py-3 border border-[#fff] text-sm font-medium rounded-xl text-white bg-[#010f01] shadow-sm transition-all duration-200 hover:bg-[#053505] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto w-full active:scale-[0.98]"
           >
-            {status === "loading" ? "Joining..." : "Join Waitlist"}
-            <FiArrowRight />
+            {status === 'loading' ? (
+              <>
+                <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
+                Joining...
+              </>
+            ) : (
+              <>
+                Join Waitlist
+                <ArrowRight className="ml-2 -mr-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </>
+            )}
           </button>
         </div>
+
+        {/* Real-time Validation Feedback */}
+        <div className="min-h-[24px] px-1">
+          {showFeedback && (
+            <div role="status" aria-live="polite" className="animate-in fade-in slide-in-from-top-1 duration-300">
+              {checkStatus === 'checking' && (
+               <div className="flex items-center text-md text-gray-500">
+                  <Loader2 className="animate-spin mr-1.5 h-3.5 w-3.5" />
+                  Verifying email...
+                </div>
+              )}
+              
+              {checkStatus === 'already_joined' && (
+                <div className="flex items-center text-md text-amber-600 font-medium">
+                  <AlertCircle className="mr-1 h-4 w-4" />
+                  You're already on the waitlist!
+                </div>
+              )}
+              
+              {checkStatus === 'available' && isValidEmail && (
+                <div className="flex items-center text-md text-emerald-600 font-medium">
+                  <Sparkles className="mr-1 h-4 w-4" />
+                  Looks good to go
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Submission Status Messages */}
+          {message && status !== 'idle' && (
+            <div role="alert" className="animate-in fade-in slide-in-from-top-1 duration-300">
+              {status === 'success' && (
+                <div className="flex items-center text-sm text-emerald-600 bg-transparent border border-emerald-100 rounded-lg p-3">
+                  <CheckCircle2 className="mr-2 h-5 w-5" />
+                  {message}
+                </div>
+              )}
+              
+              {status === 'already_joined' && (
+                <div className="flex items-center text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg p-3">
+                  <AlertCircle className="mr-2 h-5 w-5" />
+                  {message}
+                </div>
+              )}
+              
+              {status === 'error' && (
+                <div className="flex items-center text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-lg p-3">
+                  <AlertCircle className="mr-2 h-5 w-5" />
+                  {message}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </form>
-
-      <AnimatePresence mode="wait">
-        {status === "success" && (
-          <motion.p
-            key="success"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="text-brand-light mt-5 flex items-center justify-center gap-2 text-base sm:text-lg"
-          >
-            <FiCheckCircle /> You're on the list! Get ready for exclusive perks.
-          </motion.p>
-        )}
-
-        {status === "error" && (
-          <motion.p
-            key="error"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="text-red-400 mt-4 text-sm text-center"
-          >
-            Something went wrong. Please try again.
-          </motion.p>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
+
+
+
+
 
 // ── Feature Card ─────────────────────────────────────────────
 const FeatureCard = ({ icon: Icon, title, desc }) => (
@@ -156,10 +280,10 @@ const FeatureCard = ({ icon: Icon, title, desc }) => (
 // ── Main Component ─────────────────────────────────────────────
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#050505] text-gray-300 selection:bg-brand selection:text-white font-sans">
+    <div className="min-h-screen bg-[#010f01] text-gray-300 selection:bg-brand selection:text-white font-sans">
       {/* Background glows */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-brand/10 blur-[100px] sm:blur-[140px] rounded-full animate-pulse-slow opacity-70" />
+        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-brand/40 blur-[100px] sm:blur-[140px] rounded-full animate-pulse-slow opacity-70" />
         <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-brand/5 blur-[100px] sm:blur-[140px] rounded-full opacity-60" />
       </div>
 
